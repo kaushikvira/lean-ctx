@@ -9,11 +9,11 @@ const navItems = [
 const currentPath = Astro.url.pathname;
 ---
 
-<header class="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
+<header class="sticky top-0 z-50 glass-strong">
   <nav class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2 group">
-      <span class="text-xl font-bold tracking-tight text-text">lean</span>
-      <span class="text-xl font-light text-accent">-ctx</span>
+    <a href="/" class="flex items-center gap-1.5 group">
+      <span class="text-xl font-bold tracking-tight text-text-bright">lean</span>
+      <span class="text-xl font-light gradient-text-accent">-ctx</span>
     </a>
 
     <div class="hidden md:flex items-center gap-8">
@@ -21,8 +21,10 @@ const currentPath = Astro.url.pathname;
         <a
           href={item.href}
           class:list={[
-            'text-sm transition-colors',
-            currentPath.startsWith(item.href) ? 'text-accent font-medium' : 'text-muted hover:text-text'
+            'text-sm transition-all duration-300',
+            currentPath.startsWith(item.href)
+              ? 'text-accent font-medium'
+              : 'text-muted hover:text-text-bright'
           ]}
         >
           {item.label}
@@ -35,7 +37,7 @@ const currentPath = Astro.url.pathname;
         href="https://gitlab.pounce.ch/root/lean-ctx"
         target="_blank"
         rel="noopener"
-        class="text-muted hover:text-text transition-colors"
+        class="text-muted hover:text-accent transition-colors duration-300"
         aria-label="GitLab"
       >
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -44,7 +46,7 @@ const currentPath = Astro.url.pathname;
       </a>
       <a
         href="/docs/getting-started"
-        class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-accent text-bg hover:bg-accent/90 transition-colors"
+        class="hidden sm:inline-flex items-center px-5 py-2 text-sm font-semibold rounded-lg btn-glossy text-bg"
       >
         Get Started
       </a>
@@ -61,13 +63,13 @@ const currentPath = Astro.url.pathname;
     </button>
   </nav>
 
-  <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-bg px-6 py-4">
+  <div id="mobile-menu" class="hidden md:hidden border-t border-border/50 px-6 py-4">
     {navItems.map(item => (
       <a href={item.href} class="block py-2 text-sm text-muted hover:text-text transition-colors">
         {item.label}
       </a>
     ))}
-    <a href="/docs/getting-started" class="block mt-3 text-center py-2 text-sm font-medium rounded-lg bg-accent text-bg">
+    <a href="/docs/getting-started" class="block mt-3 text-center py-2 text-sm font-semibold rounded-lg btn-glossy text-bg">
       Get Started
     </a>
   </div>

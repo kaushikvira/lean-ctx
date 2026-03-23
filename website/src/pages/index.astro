@@ -15,18 +15,21 @@ import QuickStart from '../components/QuickStart.astro';
   <QuickStart />
 
   <!-- CTA Section -->
-  <section class="py-24 border-t border-border">
-    <div class="max-w-3xl mx-auto px-6 text-center">
-      <h2 class="text-3xl font-bold mb-4">Stop Wasting Tokens</h2>
-      <p class="text-muted text-lg mb-8 max-w-xl mx-auto">
+  <section class="relative py-28 overflow-hidden">
+    <div class="orb w-[400px] h-[400px] bg-accent/15 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="animation-delay: -5s;"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-bg via-transparent to-bg pointer-events-none"></div>
+
+    <div class="relative max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-5">Stop Wasting Tokens</h2>
+      <p class="text-muted text-lg mb-10 max-w-xl mx-auto leading-relaxed">
         Every token saved is money saved. lean-ctx works silently in the background,
         optimizing every interaction with your AI coding tool.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/docs/getting-started" class="inline-flex items-center px-8 py-3.5 text-sm font-semibold rounded-lg bg-accent text-bg hover:bg-accent/90 transition-all shadow-lg shadow-accent/20">
+        <a href="/docs/getting-started" class="btn-glossy inline-flex items-center px-10 py-4 text-sm font-bold rounded-xl text-bg">
           Get Started — It's Free
         </a>
-        <a href="/pricing" class="inline-flex items-center px-8 py-3.5 text-sm font-medium rounded-lg border border-border text-text hover:border-accent/40 transition-all">
+        <a href="/pricing" class="btn-outline-glossy inline-flex items-center px-10 py-4 text-sm font-medium rounded-xl text-text">
           View Pricing
         </a>
       </div>

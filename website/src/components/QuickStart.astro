@@ -23,38 +23,40 @@ cd lean-ctx && npm install && npm run build`,
   {
     num: '03',
     title: 'Start Saving Tokens',
-    code: `// lean-ctx tools are now available in your editor
-// ctx_read, ctx_tree, ctx_shell, ctx_benchmark, ctx_metrics
+    code: `// 6 tools available: ctx_read, ctx_tree, ctx_shell,
+// ctx_benchmark, ctx_metrics, ctx_compress
 
-// Open the dashboard to see your savings:
+// Open the dashboard:
 $ lean-ctx dashboard`,
   },
 ];
 ---
 
-<section class="py-24 border-t border-border">
-  <div class="max-w-4xl mx-auto px-6">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl font-bold mb-4">Up and Running in 3 Steps</h2>
-      <p class="text-muted text-lg max-w-2xl mx-auto">
-        No cloud account needed. No API keys. Just clone, build, and configure.
+<section class="relative py-28 overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-b from-bg via-surface/30 to-bg pointer-events-none"></div>
+
+  <div class="relative max-w-4xl mx-auto px-6">
+    <div class="text-center mb-20">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-5">Up and Running in 3 Steps</h2>
+      <p class="text-muted text-lg max-w-2xl mx-auto leading-relaxed">
+        No cloud account. No API keys. Clone, build, configure.
       </p>
     </div>
 
-    <div class="space-y-6">
+    <div class="space-y-5">
       {steps.map(step => (
-        <div class="rounded-xl border border-border bg-surface overflow-hidden">
-          <div class="flex items-center gap-3 px-6 py-3 border-b border-border bg-surface-2">
-            <span class="text-xs font-bold text-accent font-mono">{step.num}</span>
-            <span class="text-sm font-medium text-text">{step.title}</span>
+        <div class="card-premium rounded-2xl overflow-hidden group">
+          <div class="flex items-center gap-3 px-6 py-4 border-b border-border/30 bg-gradient-to-r from-surface-2 to-surface">
+            <span class="text-xs font-bold gradient-text font-mono">{step.num}</span>
+            <span class="text-sm font-semibold text-text-bright">{step.title}</span>
           </div>
-          <pre class="p-5 text-sm font-mono text-muted leading-relaxed overflow-x-auto"><code>{step.code}</code></pre>
+          <pre class="p-6 text-sm font-mono text-muted leading-relaxed overflow-x-auto"><code>{step.code}</code></pre>
         </div>
       ))}
     </div>
 
-    <div class="text-center mt-10">
-      <a href="/docs/getting-started" class="inline-flex items-center px-6 py-3 text-sm font-semibold rounded-lg bg-accent text-bg hover:bg-accent/90 transition-all">
+    <div class="text-center mt-12">
+      <a href="/docs/getting-started" class="btn-glossy inline-flex items-center px-8 py-3.5 text-sm font-bold rounded-xl text-bg">
         Read Full Guide
         <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>

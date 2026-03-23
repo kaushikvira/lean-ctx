@@ -33,20 +33,20 @@ const currentPath = Astro.url.pathname;
 ---
 
 <aside class="hidden lg:block">
-  <nav class="sticky top-24 space-y-6">
+  <nav class="sticky top-24 space-y-8">
     {sections.map(section => (
       <div>
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-muted mb-2">{section.title}</h4>
+        <h4 class="text-xs font-semibold uppercase tracking-widest text-muted/50 mb-3">{section.title}</h4>
         <ul class="space-y-1">
           {section.items.map(item => (
             <li>
               <a
                 href={item.href}
                 class:list={[
-                  'block text-sm py-1 px-3 rounded-md transition-colors',
+                  'block text-sm py-1.5 px-3 rounded-lg transition-all duration-300',
                   currentPath === item.href
-                    ? 'text-accent bg-accent-glow font-medium'
-                    : 'text-muted hover:text-text hover:bg-surface'
+                    ? 'text-accent bg-accent/8 border border-accent/10 font-medium'
+                    : 'text-muted hover:text-text-bright hover:bg-surface-2'
                 ]}
               >
                 {item.label}

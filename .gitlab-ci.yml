@@ -1,0 +1,115 @@
+stages:
+  - lint
+  - build
+  - deploy
+  - verify
+
+variables:
+  GIT_DEPTH: 1
+  REMOTE_DIR: /home/administrator/lean-ctx
+  CONTAINER_NAME: lean-ctx-web
+  IMAGE_NAME: lean-ctx-web
+
+lint-mcp-server:
+  stage: lint
+  tags:
+    - docker
+  image: node:22-alpine
+  script:
+    - npm ci --no-audit --no-fund
+    - npx tsc --noEmit
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+build-website:
+  stage: build
+  tags:
+    - docker
+  image: node:22-alpine
+  script:
+    - cd website && npm ci --no-audit --no-fund && npm run build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+deploy:
+  stage: deploy
+  tags:
+    - docker
+    - deploy
+  image: alpine:3.19
+  needs:
+    - lint-mcp-server
+    - build-website
+  before_script:
+    - apk add --no-cache openssh-client rsync curl
+    - mkdir -p ~/.ssh
+    - cp "$DEPLOY_SSH_KEY" ~/.ssh/deploy_key
+    - chmod 600 ~/.ssh/deploy_key
+    - ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null
+  script:
+    - >-
+      rsync -az --delete
+      -e "ssh -i ~/.ssh/deploy_key"
+      --exclude ".git"
+      --exclude "node_modules"
+      --exclude "website/node_modules"
+      --exclude "website/dist"
+      --exclude "dist"
+      --exclude ".env"
+      ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${REMOTE_DIR}/"
+    - |
+      ssh -i ~/.ssh/deploy_key "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s \
+        "$DEPLOY_SUDO_PASSWORD" "$LEAN_CTX_DOMAIN" << 'DEPLOY'
+        set -euo pipefail
+        PASS="$1"
+        DOMAIN="${2:-lean-ctx.local}"
+        REPO="/home/administrator/lean-ctx"
+
+        cd "$REPO"
+
+        echo "[deploy] Building lean-ctx-web..."
+        echo "$PASS" | sudo -S docker build --no-cache -f Dockerfile.web -t lean-ctx-web . 2>&1 | tail -8
+
+        echo "[deploy] Restarting lean-ctx-web..."
+        echo "$PASS" | sudo -S docker stop lean-ctx-web 2>/dev/null || true
+        echo "$PASS" | sudo -S docker rm lean-ctx-web 2>/dev/null || true
+
+        echo "$PASS" | sudo -S docker run -d \
+          --name lean-ctx-web \
+          --network coolify \
+          --restart unless-stopped \
+          -l "traefik.enable=true" \
+          -l "traefik.docker.network=coolify" \
+          -l "traefik.http.routers.lean-ctx.rule=Host(\`$DOMAIN\`)" \
+          -l "traefik.http.routers.lean-ctx.entrypoints=https" \
+          -l "traefik.http.routers.lean-ctx.tls=true" \
+          -l "traefik.http.routers.lean-ctx.tls.certresolver=letsencrypt" \
+          -l "traefik.http.services.lean-ctx.loadbalancer.server.port=80" \
+          lean-ctx-web
+
+        echo "[deploy] lean-ctx-web started on $DOMAIN"
+      DEPLOY
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+verify:
+  stage: verify
+  tags:
+    - docker
+  image: alpine:3.19
+  needs:
+    - deploy
+  script:
+    - apk add --no-cache curl
+    - sleep 8
+    - |
+      DOMAIN="${LEAN_CTX_DOMAIN:-lean-ctx.local}"
+      HTTP_CODE=$(curl -so /dev/null -w "%{http_code}" --max-time 10 "https://$DOMAIN/" || echo "000")
+      echo "https://$DOMAIN/ → HTTP $HTTP_CODE"
+      if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "301" ] && [ "$HTTP_CODE" != "302" ]; then
+        echo "WARNING: Site returned $HTTP_CODE"
+      fi
+      echo "Verification complete."
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  allow_failure: true

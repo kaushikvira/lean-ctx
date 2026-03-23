@@ -15,7 +15,7 @@ impl ServerHandler for LeanCtxServer {
             .build();
 
         InitializeResult::new(capabilities)
-            .with_server_info(Implementation::new("lean-ctx", "1.2.0"))
+            .with_server_info(Implementation::new("lean-ctx", "1.2.1"))
             .with_instructions(
                 "lean-ctx MCP. Use ctx_read(path,mode) instead of Read. Use ctx_shell(cmd) instead of Shell. \
                 ctx_read modes: full(cached), map(deps+API), signatures, diff, aggressive, entropy. \
@@ -163,10 +163,7 @@ impl ServerHandler for LeanCtxServer {
                     let path = get_str(args, "path").unwrap_or_else(|| ".".to_string());
                     let depth = get_int(args, "depth").unwrap_or(3) as usize;
                     let show_hidden = get_bool(args, "show_hidden").unwrap_or(false);
-                    let result = crate::tools::ctx_tree::handle(&path, depth, show_hidden);
-                    let sent = crate::core::tokens::count_tokens(&result);
-                    self.record_call("ctx_tree", sent, 0, None).await;
-                    result
+                    crate::tools::ctx_tree::handle(&path, depth, show_hidden)
                 }
                 "ctx_shell" => {
                     let command = get_str(args, "command")
@@ -184,10 +181,7 @@ impl ServerHandler for LeanCtxServer {
                     let path = get_str(args, "path").unwrap_or_else(|| ".".to_string());
                     let ext = get_str(args, "ext");
                     let max = get_int(args, "max_results").unwrap_or(20) as usize;
-                    let result = crate::tools::ctx_search::handle(&pattern, &path, ext.as_deref(), max);
-                    let sent = crate::core::tokens::count_tokens(&result);
-                    self.record_call("ctx_search", sent, 0, None).await;
-                    result
+                    crate::tools::ctx_search::handle(&pattern, &path, ext.as_deref(), max)
                 }
                 "ctx_compress" => {
                     let include_sigs = get_bool(args, "include_signatures").unwrap_or(true);
@@ -200,25 +194,17 @@ impl ServerHandler for LeanCtxServer {
                 "ctx_benchmark" => {
                     let path = get_str(args, "path")
                         .ok_or_else(|| ErrorData::invalid_params("path is required", None))?;
-                    let result = crate::tools::ctx_benchmark::handle(&path);
-                    self.record_call("ctx_benchmark", 0, 0, None).await;
-                    result
+                    crate::tools::ctx_benchmark::handle(&path)
                 }
                 "ctx_metrics" => {
                     let cache = self.cache.read().await;
                     let calls = self.tool_calls.read().await;
-                    let result = crate::tools::ctx_metrics::handle(&cache, &calls);
-                    drop(cache);
-                    drop(calls);
-                    self.record_call("ctx_metrics", 0, 0, None).await;
-                    result
+                    crate::tools::ctx_metrics::handle(&cache, &calls)
                 }
                 "ctx_analyze" => {
                     let path = get_str(args, "path")
                         .ok_or_else(|| ErrorData::invalid_params("path is required", None))?;
-                    let result = crate::tools::ctx_analyze::handle(&path);
-                    self.record_call("ctx_analyze", 0, 0, None).await;
-                    result
+                    crate::tools::ctx_analyze::handle(&path)
                 }
                 _ => {
                     return Err(ErrorData::invalid_params(

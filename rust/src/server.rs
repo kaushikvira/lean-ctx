@@ -15,7 +15,7 @@ impl ServerHandler for LeanCtxServer {
             .build();
 
         InitializeResult::new(capabilities)
-            .with_server_info(Implementation::new("lean-ctx", "1.0.0"))
+            .with_server_info(Implementation::new("lean-ctx", "1.1.1"))
             .with_instructions(
                 "lean-ctx MCP. Use ctx_read(path,mode) instead of Read. Use ctx_shell(cmd) instead of Shell. \
                 ctx_read modes: full(cached), map(deps+API), signatures, diff, aggressive, entropy. \

@@ -63,7 +63,7 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
             "--version" | "-V" => {
-                println!("lean-ctx 1.1.0");
+                println!("lean-ctx 1.1.1");
                 return Ok(());
             }
             "--help" | "-h" => {
@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
 
-    tracing::info!("lean-ctx v1.1.0 MCP server starting");
+    tracing::info!("lean-ctx v1.1.1 MCP server starting");
 
     let server = tools::create_server();
     let transport = rmcp::transport::io::stdio();
@@ -95,7 +95,7 @@ async fn main() -> Result<()> {
 
 fn print_help() {
     println!(
-        "lean-ctx 1.1.0 — Hybrid Context Optimizer (Shell Hook + MCP Server)
+        "lean-ctx 1.1.1 — Hybrid Context Optimizer (Shell Hook + MCP Server)
 
 USAGE:
     lean-ctx                       Start MCP server (stdio)

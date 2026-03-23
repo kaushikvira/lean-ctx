@@ -52,7 +52,7 @@ README.md
     name: 'ctx_shell',
     tagline: 'CLI Output Compression',
     savings: '60-90%',
-    description: 'Pattern-based compression for common developer tools. Recognizes git, npm, cargo, docker, and TypeScript compiler output. Also available as a transparent shell hook — compresses output automatically without LLM cooperation.',
+    description: 'Pattern-based compression for common developer tools. Recognizes git, npm, cargo, docker, tsc, grep, find, ls, curl, and test runner output. Also available as a transparent shell hook — compresses output automatically without LLM cooperation.',
     modes: [],
     example: {
       input: 'ctx_shell "git status"',
@@ -169,6 +169,48 @@ routes.ts:89 // createUser validation
 [~1200 tok saved vs full reads]`,
     },
   },
+  {
+    id: 'cli_init',
+    name: 'lean-ctx init',
+    tagline: 'One-Command Setup',
+    savings: 'Auto-setup',
+    description: 'Initializes lean-ctx in the current project or globally. With --global, auto-installs shell aliases for git, npm, cargo, docker, grep, find, ls, and curl into your shell profile (.zshrc / .bashrc).',
+    modes: [],
+    example: {
+      input: 'lean-ctx init --global',
+      output: `Installing lean-ctx shell aliases...
+Added to ~/.zshrc:
+  alias git='lean-ctx -c git'
+  alias npm='lean-ctx -c npm'
+  alias cargo='lean-ctx -c cargo'
+  alias docker='lean-ctx -c docker'
+  alias grep='lean-ctx -c grep'
+  alias find='lean-ctx -c find'
+  alias ls='lean-ctx -c ls'
+  alias curl='lean-ctx -c curl'
+Done! Restart your shell or run: source ~/.zshrc`,
+    },
+  },
+  {
+    id: 'cli_gain',
+    name: 'lean-ctx gain',
+    tagline: 'Persistent Savings Dashboard',
+    savings: 'Lifetime stats',
+    description: 'Shows cumulative token savings across all sessions. Stats are persisted to ~/.lean-ctx/stats.json. See total tokens saved, total cost avoided, and per-tool breakdowns over your entire usage history.',
+    modes: [],
+    example: {
+      input: 'lean-ctx gain',
+      output: `lean-ctx savings (all time)
+══════════════════════════════════════════════════
+Sessions: 47 | Total reads: 1,204 | Cache hits: 892 (74%)
+Tokens saved: 2.4M | Cost avoided: $36.12
+──────────────────────────────────────────────────
+By Tool:
+  ctx_read        812    1.8M    92%
+  ctx_shell       284    480K    76%
+  ctx_tree        108     89K    41%`,
+    },
+  },
 ];
 ---
 
@@ -181,7 +223,7 @@ routes.ts:89 // createUser validation
       <p class="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Tool reference</p>
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-5">Every Tool, <span class="gradient-text">Explained</span></h1>
       <p class="text-lg text-muted max-w-2xl mx-auto leading-relaxed">
-        8 MCP tools working together to minimize tokens while preserving the context your AI needs for high-quality reasoning.
+        8 MCP tools + a full CLI working together to minimize tokens while preserving the context your AI needs for high-quality reasoning.
       </p>
     </div>
 

@@ -2,7 +2,7 @@
 import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
-<DocsLayout title="ctx_shell — CLI Compression" description="Pattern-based compression for git, npm, cargo, docker, and TypeScript output.">
+<DocsLayout title="ctx_shell — CLI Compression" description="Pattern-based compression for git, npm, cargo, docker, tsc, grep, find, ls, curl, and test runner output.">
   <p>
     <code>ctx_shell</code> executes shell commands and applies pattern-based compression to the output.
     It recognizes common developer tools and strips verbose boilerplate while preserving actionable information.
@@ -51,14 +51,54 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   db.ts:15 TS2304 name not found
   db.ts:28 TS2304 name not found</code></pre>
 
+  <h3>grep</h3>
+  <p>Compresses <code>grep</code> / <code>rg</code> search results. Deduplicates paths, groups matches by file, removes redundant context.</p>
+  <pre><code>ctx_shell "grep -rn 'TODO' src/"
+→ 4 matches in 3 files:
+  auth.ts:12 TODO: add rate limiting
+  db.ts:45 TODO: connection pooling
+  db.ts:78 TODO: retry logic
+  routes.ts:3 TODO: validate input</code></pre>
+
+  <h3>find</h3>
+  <p>Compresses <code>find</code> output into a compact tree structure with file counts.</p>
+  <pre><code>ctx_shell "find src/ -name '*.ts'"
+→ src/ (23 .ts files)
+  core/ (8) | tools/ (5) | routes/ (4) | utils/ (6)</code></pre>
+
+  <h3>ls</h3>
+  <p>Compresses <code>ls</code> output. Removes verbose metadata, groups by type.</p>
+  <pre><code>ctx_shell "ls -la src/"
+→ src/ 12 items: 8 dirs, 4 files
+  dirs: core/ tools/ routes/ utils/ ...
+  files: index.ts main.ts config.ts types.ts</code></pre>
+
+  <h3>curl</h3>
+  <p>Compresses <code>curl</code> HTTP output. Extracts status, headers summary, and truncates large response bodies.</p>
+  <pre><code>ctx_shell "curl -s https://api.example.com/users"
+→ 200 OK | application/json | 2.3KB
+  [item1, item2, ... +48 items]</code></pre>
+
+  <h3>Test Runners</h3>
+  <p>Compresses output from jest, vitest, cargo test, pytest. Summarizes pass/fail counts, shows only failing tests with context.</p>
+  <pre><code>ctx_shell "npm test"
+→ 42 passed, 2 failed, 1 skipped (3.2s)
+  FAIL auth.test.ts:23 "should validate token"
+    Expected: true, Received: false
+  FAIL db.test.ts:45 "should retry on connection error"
+    Timeout after 5000ms</code></pre>
+
   <h2>Shell Hook Mode</h2>
   <p>
     Use lean-ctx as a transparent shell wrapper for automatic compression:
   </p>
-  <pre><code># Single command
+  <pre><code># Auto-install all aliases
+lean-ctx init --global
+
+# Or single command
 lean-ctx -c git status
 
-# Shell aliases
+# Or manual aliases
 alias git='lean-ctx -c git'
 alias cargo='lean-ctx -c cargo'
 

@@ -61,12 +61,25 @@ cargo build --release
     Both approaches can be used simultaneously.
   </p>
 
-  <h3>Shell Aliases</h3>
-  <p>Add to your <code>.zshrc</code> or <code>.bashrc</code>:</p>
+  <h3>Automatic Setup (Recommended)</h3>
+  <p>The fastest way to set up the shell hook — one command installs all aliases globally:</p>
+  <pre><code>lean-ctx init --global</code></pre>
+  <p>
+    This adds aliases for <code>git</code>, <code>npm</code>, <code>cargo</code>, <code>docker</code>,
+    <code>grep</code>, <code>find</code>, <code>ls</code>, and <code>curl</code> to your shell profile
+    (<code>.zshrc</code> or <code>.bashrc</code>). Restart your shell or run <code>source ~/.zshrc</code> afterwards.
+  </p>
+
+  <h3>Manual Shell Aliases</h3>
+  <p>Alternatively, add individual aliases to your <code>.zshrc</code> or <code>.bashrc</code>:</p>
   <pre><code>alias git='lean-ctx -c git'
 alias npm='lean-ctx -c npm'
 alias cargo='lean-ctx -c cargo'
-alias docker='lean-ctx -c docker'</code></pre>
+alias docker='lean-ctx -c docker'
+alias grep='lean-ctx -c grep'
+alias find='lean-ctx -c find'
+alias ls='lean-ctx -c ls'
+alias curl='lean-ctx -c curl'</code></pre>
 
   <h3>Cursor Terminal Profile</h3>
   <p>Add a lean-ctx terminal profile in VS Code / Cursor settings:</p>

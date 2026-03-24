@@ -1,7 +1,14 @@
+target/
 node_modules/
 dist/
 *.tsbuildinfo
 .env
 deploy.sh
-website/dist/
-website/node_modules/
+Dockerfile.web
+website/
+tsconfig.json
+/package.json
+/package-lock.json
+/src/
+.gitlab-ci.yml
+lean-ctx.config.example.json

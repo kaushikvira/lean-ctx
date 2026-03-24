@@ -6,7 +6,7 @@ use rmcp::service::{RequestContext, RoleServer};
 use rmcp::ErrorData;
 use serde_json::{json, Map, Value};
 
-use crate::tools::LeanCtxServer;
+use crate::tools::{CrpMode, LeanCtxServer};
 
 impl ServerHandler for LeanCtxServer {
     fn get_info(&self) -> ServerInfo {
@@ -14,33 +14,11 @@ impl ServerHandler for LeanCtxServer {
             .enable_tools()
             .build();
 
+        let instructions = build_instructions(self.crp_mode);
+
         InitializeResult::new(capabilities)
-            .with_server_info(Implementation::new("lean-ctx", "1.2.2"))
-            .with_instructions(
-                "lean-ctx MCP — MANDATORY tool replacement. You MUST use lean-ctx tools for ALL operations:\n\
-                \n\
-                REQUIRED (never use the built-in alternative):\n\
-                • Read file → ctx_read(path, mode) — NEVER use Read tool\n\
-                • Run command → ctx_shell(command) — NEVER use Shell tool\n\
-                • Search code → ctx_search(pattern, path) — NEVER use Grep tool\n\
-                • List files → ctx_tree(path, depth) — NEVER use Shell with ls/find\n\
-                \n\
-                ctx_read modes: full (cached, for files you edit), map (deps+API, context-only), \
-                signatures, diff, aggressive, entropy. Re-reads cost ~13 tokens. File refs F1,F2.. persist.\n\
-                \n\
-                PROACTIVE (use without being asked):\n\
-                • ctx_compress — when context grows large, create checkpoint\n\
-                • ctx_metrics — periodically verify token savings\n\
-                \n\
-                ON DEMAND:\n\
-                • ctx_analyze(path) — optimal mode recommendation\n\
-                • ctx_benchmark(path) — exact token counts per mode\n\
-                \n\
-                AUTO-CHECKPOINT: Every 10 tool calls, a compressed checkpoint is automatically appended \
-                to the response. This keeps context compact in long sessions. Configurable via LEAN_CTX_CHECKPOINT_INTERVAL.\n\
-                \n\
-                Write, StrReplace, Delete, Glob have no lean-ctx equivalent — use normally."
-            )
+            .with_server_info(Implementation::new("lean-ctx", "1.3.0"))
+            .with_instructions(instructions)
     }
 
     fn list_tools(
@@ -172,7 +150,7 @@ impl ServerHandler for LeanCtxServer {
                         .ok_or_else(|| ErrorData::invalid_params("path is required", None))?;
                     let mode = get_str(args, "mode").unwrap_or_else(|| "full".to_string());
                     let mut cache = self.cache.write().await;
-                    let output = crate::tools::ctx_read::handle(&mut cache, &path, &mode);
+                    let output = crate::tools::ctx_read::handle(&mut cache, &path, &mode, self.crp_mode);
                     let original = cache.get(&path).map_or(0, |e| e.original_tokens);
                     let tokens = crate::core::tokens::count_tokens(&output);
                     drop(cache);
@@ -261,6 +239,70 @@ impl ServerHandler for LeanCtxServer {
             }
 
             Ok(CallToolResult::success(vec![Content::text(result_text)]))
+        }
+    }
+}
+
+fn build_instructions(crp_mode: CrpMode) -> String {
+    let base = "\
+lean-ctx MCP — MANDATORY tool replacement. You MUST use lean-ctx tools for ALL operations:\n\
+\n\
+REQUIRED (never use the built-in alternative):\n\
+• Read file → ctx_read(path, mode) — NEVER use Read tool\n\
+• Run command → ctx_shell(command) — NEVER use Shell tool\n\
+• Search code → ctx_search(pattern, path) — NEVER use Grep tool\n\
+• List files → ctx_tree(path, depth) — NEVER use Shell with ls/find\n\
+\n\
+ctx_read modes: full (cached, for files you edit), map (deps+API, context-only), \
+signatures, diff, aggressive, entropy. Re-reads cost ~13 tokens. File refs F1,F2.. persist.\n\
+\n\
+PROACTIVE (use without being asked):\n\
+• ctx_compress — when context grows large, create checkpoint\n\
+• ctx_metrics — periodically verify token savings\n\
+\n\
+ON DEMAND:\n\
+• ctx_analyze(path) — optimal mode recommendation\n\
+• ctx_benchmark(path) — exact token counts per mode\n\
+\n\
+AUTO-CHECKPOINT: Every 10 tool calls, a compressed checkpoint is automatically appended \
+to the response. This keeps context compact in long sessions. Configurable via LEAN_CTX_CHECKPOINT_INTERVAL.\n\
+\n\
+Write, StrReplace, Delete, Glob have no lean-ctx equivalent — use normally.";
+
+    match crp_mode {
+        CrpMode::Off => base.to_string(),
+        CrpMode::Compact => {
+            format!(
+                "{base}\n\n\
+                CRP MODE: compact\n\
+                Respond using Compact Response Protocol:\n\
+                • Omit filler words, articles, and redundant phrases\n\
+                • Use symbol shorthand: → (returns/leads to), ∴ (therefore), ≈ (approximately), ✓ (done/ok), ✗ (error/fail)\n\
+                • Abbreviate common terms: fn (function), cfg (config), impl (implementation), deps (dependencies)\n\
+                • Use compact lists instead of prose\n\
+                • Prefer code blocks over natural language explanations"
+            )
+        }
+        CrpMode::Tdd => {
+            format!(
+                "{base}\n\n\
+                CRP MODE: tdd (Token Dense Dialect)\n\
+                CRITICAL: Maximize information density. Every token must carry meaning.\n\
+                \n\
+                RESPONSE RULES:\n\
+                • Use symbol shorthand everywhere: → ∴ ≈ ✓ ✗ λ ∂ § ¿\n\
+                • λ=function/handler, ∂=change/delta, §=section/module, ¿=check/verify\n\
+                • Drop all articles (a, the, an), filler words, and pleasantries\n\
+                • Compress identifiers: use short IDs from symbol table when provided\n\
+                • Reference files by Fn refs only, never full paths\n\
+                • Use tabular format for structured data\n\
+                • Abbreviations: fn, cfg, impl, deps, req, res, ctx, err, ok, ret, arg, val, ty, mod\n\
+                • For code changes: show only diff lines, not full files\n\
+                • No explanations unless asked — just show the solution\n\
+                \n\
+                SYMBOL TABLE: Tool outputs include a §MAP section mapping long identifiers to short IDs.\n\
+                Use these short IDs in all subsequent references."
+            )
         }
     }
 }

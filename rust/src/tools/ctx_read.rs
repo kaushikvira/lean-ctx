@@ -6,9 +6,11 @@ use crate::core::deps;
 use crate::core::entropy;
 use crate::core::protocol;
 use crate::core::signatures;
+use crate::core::symbol_map::{self, SymbolMap};
 use crate::core::tokens::count_tokens;
+use crate::tools::CrpMode;
 
-pub fn handle(cache: &mut SessionCache, path: &str, mode: &str) -> String {
+pub fn handle(cache: &mut SessionCache, path: &str, mode: &str, crp_mode: CrpMode) -> String {
     let file_ref = cache.get_file_ref(path);
     let short = protocol::shorten_path(path);
     let ext = Path::new(path)
@@ -32,7 +34,7 @@ pub fn handle(cache: &mut SessionCache, path: &str, mode: &str) -> String {
         }
         let content = existing.content.clone();
         let original_tokens = existing.original_tokens;
-        return process_mode(&content, mode, &file_ref, &short, ext, original_tokens);
+        return process_mode(&content, mode, &file_ref, &short, ext, original_tokens, crp_mode);
     }
 
     let content = match std::fs::read_to_string(path) {
@@ -45,13 +47,28 @@ pub fn handle(cache: &mut SessionCache, path: &str, mode: &str) -> String {
     if mode == "full" {
         let tokens = entry.original_tokens;
         let header = build_header(&file_ref, &short, ext, &content, entry.line_count, true);
+
+        if crp_mode.is_tdd() {
+            let mut sym = SymbolMap::new();
+            let idents = symbol_map::extract_identifiers(&content, ext);
+            for ident in &idents {
+                sym.register(ident);
+            }
+            let compressed_content = sym.apply(&content);
+            let sym_table = sym.format_table();
+            let output = format!("{header}\n{compressed_content}{sym_table}");
+            let sent = count_tokens(&output);
+            let savings = protocol::format_savings(tokens, sent);
+            return format!("{output}\n{savings}");
+        }
+
         let output = format!("{header}\n{content}");
         let sent = count_tokens(&output);
         let savings = protocol::format_savings(tokens, sent);
         return format!("{output}\n{savings}");
     }
 
-    process_mode(&content, mode, &file_ref, &short, ext, entry.original_tokens)
+    process_mode(&content, mode, &file_ref, &short, ext, entry.original_tokens, crp_mode)
 }
 
 fn build_header(file_ref: &str, short: &str, ext: &str, content: &str, line_count: usize, include_deps: bool) -> String {
@@ -72,7 +89,15 @@ fn build_header(file_ref: &str, short: &str, ext: &str, content: &str, line_coun
     header
 }
 
-fn process_mode(content: &str, mode: &str, file_ref: &str, short: &str, ext: &str, original_tokens: usize) -> String {
+fn process_mode(
+    content: &str,
+    mode: &str,
+    file_ref: &str,
+    short: &str,
+    ext: &str,
+    original_tokens: usize,
+    crp_mode: CrpMode,
+) -> String {
     let line_count = content.lines().count();
 
     match mode {
@@ -87,7 +112,11 @@ fn process_mode(content: &str, mode: &str, file_ref: &str, short: &str, ext: &st
             }
             for sig in &sigs {
                 output.push('\n');
-                output.push_str(&sig.to_compact());
+                if crp_mode.is_tdd() {
+                    output.push_str(&sig.to_tdd());
+                } else {
+                    output.push_str(&sig.to_compact());
+                }
             }
             let sent = count_tokens(&output);
             let savings = protocol::format_savings(original_tokens, sent);
@@ -117,7 +146,12 @@ fn process_mode(content: &str, mode: &str, file_ref: &str, short: &str, ext: &st
             if !key_sigs.is_empty() {
                 output.push_str("\n  API:");
                 for sig in &key_sigs {
-                    output.push_str(&format!("\n    {}", sig.to_compact()));
+                    output.push_str("\n    ");
+                    if crp_mode.is_tdd() {
+                        output.push_str(&sig.to_tdd());
+                    } else {
+                        output.push_str(&sig.to_compact());
+                    }
                 }
             }
 
@@ -128,6 +162,20 @@ fn process_mode(content: &str, mode: &str, file_ref: &str, short: &str, ext: &st
         "aggressive" => {
             let compressed = compressor::aggressive_compress(content);
             let header = build_header(file_ref, short, ext, content, line_count, true);
+
+            if crp_mode.is_tdd() {
+                let mut sym = SymbolMap::new();
+                let idents = symbol_map::extract_identifiers(&compressed, ext);
+                for ident in &idents {
+                    sym.register(ident);
+                }
+                let tdd_output = sym.apply(&compressed);
+                let sym_table = sym.format_table();
+                let sent = count_tokens(&tdd_output) + count_tokens(&sym_table);
+                let savings = protocol::format_savings(original_tokens, sent);
+                return format!("{header}\n{tdd_output}{sym_table}\n{savings}");
+            }
+
             let sent = count_tokens(&compressed);
             let savings = protocol::format_savings(original_tokens, sent);
             format!("{header}\n{compressed}\n{savings}")

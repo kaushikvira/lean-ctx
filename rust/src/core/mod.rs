@@ -6,4 +6,5 @@ pub mod patterns;
 pub mod protocol;
 pub mod signatures;
 pub mod stats;
+pub mod symbol_map;
 pub mod tokens;

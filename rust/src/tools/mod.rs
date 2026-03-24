@@ -15,6 +15,36 @@ pub mod ctx_analyze;
 
 const DEFAULT_CHECKPOINT_INTERVAL: usize = 10;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CrpMode {
+    Off,
+    Compact,
+    Tdd,
+}
+
+impl CrpMode {
+    pub fn from_env() -> Self {
+        match std::env::var("LEAN_CTX_CRP_MODE")
+            .unwrap_or_default()
+            .to_lowercase()
+            .as_str()
+        {
+            "off" => Self::Off,
+            "compact" => Self::Compact,
+            _ => Self::Tdd,
+        }
+    }
+
+    pub fn is_tdd(&self) -> bool {
+        *self == Self::Tdd
+    }
+
+    #[allow(dead_code)]
+    pub fn is_compact_or_tdd(&self) -> bool {
+        matches!(self, Self::Compact | Self::Tdd)
+    }
+}
+
 pub type SharedCache = Arc<RwLock<SessionCache>>;
 
 #[derive(Clone)]
@@ -23,6 +53,7 @@ pub struct LeanCtxServer {
     pub tool_calls: Arc<RwLock<Vec<ToolCallRecord>>>,
     pub call_count: Arc<AtomicUsize>,
     pub checkpoint_interval: usize,
+    pub crp_mode: CrpMode,
 }
 
 #[derive(Clone, Debug)]
@@ -41,11 +72,14 @@ impl LeanCtxServer {
             .and_then(|v| v.parse().ok())
             .unwrap_or(DEFAULT_CHECKPOINT_INTERVAL);
 
+        let crp_mode = CrpMode::from_env();
+
         Self {
             cache: Arc::new(RwLock::new(SessionCache::new())),
             tool_calls: Arc::new(RwLock::new(Vec::new())),
             call_count: Arc::new(AtomicUsize::new(0)),
             checkpoint_interval: interval,
+            crp_mode,
         }
     }
 

@@ -45,6 +45,37 @@ impl Signature {
             _ => format!("{} {}", self.kind, self.name),
         }
     }
+
+    pub fn to_tdd(&self) -> String {
+        let vis = if self.is_exported { "+" } else { "-" };
+        let a = if self.is_async { "~" } else { "" };
+
+        match self.kind {
+            "fn" | "method" => {
+                let ret = if self.return_type.is_empty() {
+                    String::new()
+                } else {
+                    format!("→{}", compact_type(&self.return_type))
+                };
+                let params = tdd_params(&self.params);
+                let indent = if self.indent > 0 { " " } else { "" };
+                format!("{indent}{a}λ{vis}{}({params}){ret}", self.name)
+            }
+            "class" | "struct" => format!("§{vis}{}", self.name),
+            "interface" | "trait" => format!("∂{vis}{}", self.name),
+            "type" => format!("τ{vis}{}", self.name),
+            "enum" => format!("ε{vis}{}", self.name),
+            "const" | "let" | "var" => {
+                let ty = if self.return_type.is_empty() {
+                    String::new()
+                } else {
+                    format!(":{}", compact_type(&self.return_type))
+                };
+                format!("ν{vis}{}{ty}", self.name)
+            }
+            _ => format!("{}{vis}{}", self.kind.chars().next().unwrap_or('?'), self.name),
+        }
+    }
 }
 
 static FN_RE: OnceLock<Regex> = OnceLock::new();
@@ -361,4 +392,61 @@ fn compact_params(params: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+fn compact_type(ty: &str) -> String {
+    match ty.trim() {
+        "String" | "string" | "&str" | "str" => "s".to_string(),
+        "bool" | "boolean" => "b".to_string(),
+        "i32" | "i64" | "u32" | "u64" | "usize" | "f32" | "f64" | "number" => "n".to_string(),
+        "void" | "()" => "∅".to_string(),
+        other => {
+            if other.starts_with("Vec<") || other.starts_with("Array<") {
+                let inner = other
+                    .trim_start_matches("Vec<")
+                    .trim_start_matches("Array<")
+                    .trim_end_matches('>');
+                format!("[{}]", compact_type(inner))
+            } else if other.starts_with("Option<") || other.starts_with("Maybe<") {
+                let inner = other
+                    .trim_start_matches("Option<")
+                    .trim_start_matches("Maybe<")
+                    .trim_end_matches('>');
+                format!("?{}", compact_type(inner))
+            } else if other.starts_with("Result<") {
+                "R".to_string()
+            } else if other.starts_with("impl ") {
+                other.trim_start_matches("impl ").to_string()
+            } else {
+                other.to_string()
+            }
+        }
+    }
+}
+
+fn tdd_params(params: &str) -> String {
+    if params.trim().is_empty() {
+        return String::new();
+    }
+    params
+        .split(',')
+        .map(|p| {
+            let p = p.trim();
+            if p.starts_with('&') {
+                let rest = p.trim_start_matches("&mut ").trim_start_matches('&');
+                if let Some((name, ty)) = rest.split_once(':') {
+                    format!("&{}:{}", name.trim(), compact_type(ty))
+                } else {
+                    p.to_string()
+                }
+            } else if let Some((name, ty)) = p.split_once(':') {
+                format!("{}:{}", name.trim(), compact_type(ty))
+            } else if p == "self" || p == "&self" || p == "&mut self" {
+                "⊕".to_string()
+            } else {
+                p.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(",")
 }
